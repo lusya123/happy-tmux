@@ -57,6 +57,16 @@ happy codex
 
 On your computer, run `happy` instead of `claude` or `happy codex` instead of `codex` to start your AI through our wrapper. When you want to control your coding agent from your phone, it restarts the session in remote mode. To switch back to your computer, just press any key on your keyboard.
 
+## Tmux (Optional)
+
+For remote sessions spawned by the Happy daemon, you can run sessions inside `tmux` windows:
+
+1. Start daemon: `happy daemon start`
+2. In app profile settings, enable **Spawn Sessions in Tmux**
+3. Optionally set profile env vars such as `TMUX_SESSION_NAME` and `TMUX_TMPDIR`
+
+Detailed CLI docs: `packages/happy-cli/README.md`
+
 ## 🔥 Why Happy Coder?
 
 - 📱 **Mobile access to Claude Code and Codex** - Check what your AI is building while away from your desk

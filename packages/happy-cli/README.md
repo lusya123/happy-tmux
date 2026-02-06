@@ -37,6 +37,33 @@ Start a Gemini CLI session with remote control capabilities.
 happy connect gemini
 ```
 
+## Tmux Sessions (Remote/Daemon Spawn)
+
+Happy can spawn remote sessions in `tmux` windows when sessions are started by the Happy daemon (for example, from the mobile/web app).
+
+1. Install `tmux` and ensure it is in your `PATH`.
+2. Start the daemon:
+
+```bash
+happy daemon start
+```
+
+3. In the Happy app, go to profile settings and enable **Spawn Sessions in Tmux**.
+4. Optional profile env vars:
+- `TMUX_SESSION_NAME`: target tmux session name.
+  Empty string means: use first existing tmux session, or create `happy` if none exist.
+- `TMUX_TMPDIR`: custom temp directory for tmux socket files.
+- `TMUX_UPDATE_ENVIRONMENT`: advanced tmux environment refresh behavior.
+
+To attach manually:
+
+```bash
+tmux ls
+tmux attach -t <session-name>
+```
+
+If `tmux` is unavailable, Happy falls back to regular (non-tmux) process spawning.
+
 ## Commands
 
 ### Main Commands
@@ -97,6 +124,14 @@ happy gemini project get          # Show current Google Cloud Project ID
 - `HAPPY_HOME_DIR` - Custom home directory for Happy data (default: ~/.happy)
 - `HAPPY_DISABLE_CAFFEINATE` - Disable macOS sleep prevention (set to `true`, `1`, or `yes`)
 - `HAPPY_EXPERIMENTAL` - Enable experimental features (set to `true`, `1`, or `yes`)
+
+### Tmux Configuration (Profile Env Vars)
+
+These are typically set in Happy profile settings and used by daemon-spawned sessions:
+
+- `TMUX_SESSION_NAME` - tmux session to use for spawned windows
+- `TMUX_TMPDIR` - temp directory for tmux socket files
+- `TMUX_UPDATE_ENVIRONMENT` - tmux environment update behavior
 
 ### Gemini Configuration
 
