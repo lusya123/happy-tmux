@@ -31,6 +31,7 @@ Phase 4 — UI：
 13. 初始化流程（packages/happy-app/sources/app/_layout.tsx）— 启动时加载所有已注册服务器并建立连接
 
 重要注意事项：
+- 先阅读实现文档 docs/multi-server-implementation.md，它包含了完整的架构设计、每个文件的改动说明（含行号和代码示例）
 - 先阅读每个要修改的文件的完整内容，理解现有代码后再修改
 - 遵循项目的 CLAUDE.md 中的代码规范（严格类型、不要创建无意义的小函数、不要 backward compatibility hack、不要 backward compatibility shim）
 - 所有用户可见字符串使用 t() 函数国际化，新增字符串需要添加到所有语言文件
@@ -38,6 +39,15 @@ Phase 4 — UI：
 - apiSocket 只被 3 个文件直接导入（sync.ts、ops.ts、profileSync.ts），这是改动范围的边界
 - serverConfig.ts 的 getServerUrl() 委托给 serverRegistry.getActiveServerUrl()，这样现有 17 个调用者无需修改
 - 向后兼容：旧版 CLI QR 码（无 server 参数）回退到当前活跃服务器
-- 全部完成后运行 yarn typecheck 确保类型安全，修复所有类型错误
+
+测试和验证（全部写完后执行）：
+- 运行 yarn typecheck（在 packages/happy-app 目录下）确保类型安全，修复所有类型错误
+- 运行 yarn test（在 packages/happy-app 目录下）确保现有 11 个测试不被破坏
+- 运行 yarn test（在 packages/happy-cli 目录下）确保 CLI 的 29 个测试通过
+- 为新增的纯逻辑编写单元测试（使用 vitest，测试文件放在对应源文件旁边，命名为 xxx.test.ts）：
+  - serverRegistry.test.ts：测试服务器注册、删除、获取活跃服务器、持久化
+  - tokenStorage.test.ts：测试多服务器凭证的存取和删除（mock SecureStore）
+  - QR URL 解析逻辑的测试：测试新格式（含 key + server 参数）和旧格式（只有 publicKey）的解析
+- 运行新写的测试确保全部通过
 - 最后用 git 提交所有改动，commit message 用英文描述这个 feature
 ```
