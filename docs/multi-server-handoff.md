@@ -1,5 +1,9 @@
 # Multi-Server Implementation — Handoff Document
 
+## Status: CODE COMPLETE — Awaiting Manual Testing
+
+All code, i18n, unit tests, and commit are done. Next step is manual testing on Mac.
+
 ## What Was Done
 
 ### Phase 1 — Infrastructure (COMPLETE)
@@ -29,29 +33,28 @@
 18. **SettingsView.tsx** — machines list shows server hostname when multiple servers connected
 19. **_layout.tsx** — init flow now registers primary server, loads all registered servers, and calls `sync.addServer()` for each additional server
 
-### Phase 5 — i18n, Tests, Typecheck, Commit (PARTIALLY COMPLETE)
+### Phase 5 — i18n, Tests, Commit (COMPLETE)
 
-#### i18n — English DONE, 2 of 8 other languages done
-- **en.ts** — DONE: added `common.remove`, `terminal.targetServer`, `terminal.newServerNotice`, `server.servers`, `server.connectedServers`, `server.noServersRegistered`, `server.addServer`, `server.removeServer`, `server.removeServerConfirm`
-- **ru.ts** — DONE (by i18n agent)
-- **pl.ts** — DONE (by i18n agent)
-- **es.ts** — NOT DONE
-- **ca.ts** — NOT DONE
-- **it.ts** — NOT DONE
-- **pt.ts** — NOT DONE
-- **ja.ts** — NOT DONE
-- **zh-Hans.ts** — NOT DONE
+#### i18n — All 9 languages DONE
+- **en.ts, ru.ts, pl.ts** — done in previous session
+- **es.ts, ca.ts, it.ts, pt.ts, ja.ts, zh-Hans.ts** — done in this session
+- Keys added: `common.remove`, `terminal.targetServer`, `terminal.newServerNotice`, `server.servers`, `server.connectedServers`, `server.noServersRegistered`, `server.addServer`, `server.removeServer`, `server.removeServerConfirm`
 
-#### Tests — NOT DONE
-- `serverRegistry.test.ts` — file created with 2 test cases, but incomplete (only has the first 2 tests, needs more)
-- `tokenStorage.test.ts` — NOT CREATED
-- QR URL parsing test — NOT CREATED
+#### Unit Tests — All DONE and PASSING
+- `serverRegistry.test.ts` — 14 tests (register, remove, active server, labels, hostname extraction)
+- `tokenStorage.test.ts` — 10 tests (per-server credentials, isolation, removal)
+- `parseTerminalUrl.test.ts` — 8 tests (new/old URL format, invalid inputs, edge cases)
 
-#### Typecheck — PARTIALLY DONE
-- Ran `npx typescript tsc --noEmit` — no errors in our changed files (pre-existing errors in unrelated `-zen` module)
-- Need to run `yarn test` in both packages to verify existing tests pass
+#### Test Results
+- `packages/happy-app`: 21 test files passed, 431 tests passed
+- `packages/happy-cli`: 26 test files passed, 280 tests passed
 
-#### Git Commit — NOT DONE
+#### Git Commit — DONE
+- Commit `63ee18d7` on branch `feature/multi-server`
+- 33 files changed, +1253/-183 lines
+- Not yet pushed to remote
+
+---
 
 ## Files Changed (Modified)
 - `packages/happy-cli/src/ui/auth.ts`
@@ -75,38 +78,102 @@
 - `packages/happy-app/sources/text/translations/en.ts`
 - `packages/happy-app/sources/text/translations/ru.ts`
 - `packages/happy-app/sources/text/translations/pl.ts`
+- `packages/happy-app/sources/text/translations/es.ts`
+- `packages/happy-app/sources/text/translations/ca.ts`
+- `packages/happy-app/sources/text/translations/it.ts`
+- `packages/happy-app/sources/text/translations/pt.ts`
+- `packages/happy-app/sources/text/translations/ja.ts`
+- `packages/happy-app/sources/text/translations/zh-Hans.ts`
 
 ## Files Created (New)
 - `packages/happy-app/sources/sync/serverRegistry.ts`
 - `packages/happy-app/sources/sync/serverConnection.ts`
-- `packages/happy-app/sources/sync/serverRegistry.test.ts` (incomplete)
+- `packages/happy-app/sources/sync/serverRegistry.test.ts`
+- `packages/happy-app/sources/auth/tokenStorage.test.ts`
+- `packages/happy-app/sources/hooks/parseTerminalUrl.test.ts`
+- `docs/multi-server-handoff.md`
 
-## What Remains To Do
+---
 
-### 1. Complete i18n translations (6 language files)
-Add these keys to es.ts, ca.ts, it.ts, pt.ts, ja.ts, zh-Hans.ts:
-- `common.remove` — translate "Remove"
-- `terminal.targetServer` — translate "Target Server"
-- `terminal.newServerNotice` — translate "This terminal is on a new server. Accepting will add this server to your connected servers."
-- `server.servers` — translate "Servers"
-- `server.connectedServers` — translate "Connected Servers"
-- `server.noServersRegistered` — translate "No servers registered"
-- `server.addServer` — translate "Add Server"
-- `server.removeServer` — translate "Remove Server"
-- `server.removeServerConfirm` — translate "Are you sure you want to disconnect from this server? Sessions and machines from this server will be removed."
+## Phase 6 — Manual Testing on Mac
 
-### 2. Complete unit tests
-- **serverRegistry.test.ts** — complete the test file: test register, remove, getActive, setActive, updateLabel, getServerHostname, persistence
-- **tokenStorage.test.ts** — create: test multi-server credential get/set/remove (mock SecureStore)
-- **useConnectTerminal.test.ts** — create: test `parseTerminalUrl()` for new format (key+server), old format (just publicKey), and invalid URLs
+### Prerequisites
+- Two separate server instances running (or one default + one custom server)
+- The `happy` CLI installed and updated to the version on this branch
 
-### 3. Run existing tests
-- `cd packages/happy-app && yarn test` — verify 11 existing tests pass
-- `cd packages/happy-cli && yarn test` — verify 29 existing CLI tests pass
+### How to Run the App on Mac
 
-### 4. Run new tests
-- Run the new test files and fix any failures
+**Option A: Tauri Desktop App (recommended for Mac)**
+```bash
+cd packages/happy-app
+yarn tauri:dev
+```
+This launches the macOS desktop app with hot reload.
 
-### 5. Git commit
-- Stage all changed and new files
-- Commit with English message describing the multi-server feature
+**Option B: Web Browser**
+```bash
+cd packages/happy-app
+yarn web
+```
+Then open the URL shown in terminal (usually http://localhost:8081).
+
+**Option C: iOS Simulator**
+```bash
+cd packages/happy-app
+yarn ios
+```
+
+### Test Cases
+
+#### Test 1: Single Server (Regression)
+1. Launch the app, log in to your default server
+2. Verify sessions and machines load normally
+3. Verify terminal connection works (scan QR / open link)
+4. Verify settings page shows server info
+5. **Expected**: Everything works exactly as before
+
+#### Test 2: Add a Second Server via QR
+1. On the second server, run `happy` CLI to generate a terminal QR code
+2. In the app, scan the QR code (or use the deep link `happy://terminal?key=...&server=...`)
+3. **Expected**:
+   - A notice appears: "This terminal is on a new server. Accepting will add this server to your connected servers."
+   - After accepting, the terminal connects and works
+   - The second server appears in Settings > Servers
+
+#### Test 3: Server List Management
+1. Go to Settings > Servers (or tap the server icon in the main view)
+2. **Expected**:
+   - Both servers are listed with their hostnames
+   - Each server shows connection status
+   - You can remove a server (with confirmation dialog)
+
+#### Test 4: Multi-Server Sessions & Machines
+1. With two servers connected, go to the sessions list
+2. **Expected**:
+   - Sessions from both servers appear
+   - Machines from both servers appear
+   - Each machine shows its server hostname as subtitle
+3. Start a session on server A, then on server B
+4. **Expected**: Both sessions work independently
+
+#### Test 5: Server Removal
+1. Remove the second server from Settings > Servers
+2. **Expected**:
+   - Confirmation dialog appears
+   - After confirming, the server and its sessions/machines disappear
+   - Credentials for that server are cleaned up
+   - The app continues working with the remaining server
+
+#### Test 6: App Restart Persistence
+1. With two servers connected, close and reopen the app
+2. **Expected**:
+   - Both servers reconnect automatically
+   - Sessions and machines from both servers reload
+
+#### Test 7: Old QR Format Backward Compatibility
+1. Use an older CLI that generates `happy://terminal?<base64key>` (no `key=` prefix)
+2. **Expected**: The app connects to the default server as before
+
+### Known Limitations
+- Web platform is secondary — test primarily on Tauri or iOS
+- The `happy` CLI on the second server must be version 0.14.2+ (includes `&server=` in QR URLs)
