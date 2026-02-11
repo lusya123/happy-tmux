@@ -409,6 +409,18 @@ function NewSessionWizard() {
     // Path selection
     //
 
+    // Auto-select first machine when machines arrive after initial mount
+    React.useEffect(() => {
+        if (selectedMachineId === null && machines.length > 0) {
+            const bestMachine = recentMachinePaths.length > 0
+                ? recentMachinePaths.find(r => machines.some(m => m.id === r.machineId))?.machineId
+                : undefined;
+            const machineId = bestMachine || machines[0].id;
+            setSelectedMachineId(machineId);
+            setSelectedPath(getRecentPathForMachine(machineId, recentMachinePaths));
+        }
+    }, [machines, selectedMachineId, recentMachinePaths]);
+
     const [selectedPath, setSelectedPath] = React.useState<string>(() => {
         return getRecentPathForMachine(selectedMachineId, recentMachinePaths);
     });
@@ -1186,9 +1198,9 @@ function NewSessionWizard() {
                                 modelMode={modelMode}
                                 onModelModeChange={setModelMode}
                                 connectionStatus={connectionStatus}
-                                machineName={selectedMachine?.metadata?.displayName || selectedMachine?.metadata?.host}
+                                machineName={selectedMachine ? (selectedMachine.metadata?.displayName || selectedMachine.metadata?.host || null) : null}
                                 onMachineClick={handleMachineClick}
-                                currentPath={selectedPath}
+                                currentPath={selectedPath || undefined}
                                 onPathClick={handlePathClick}
                             />
                         </View>

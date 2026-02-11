@@ -10,7 +10,7 @@
 - `packages/happy-app/sources/text/translations/pl.ts` — 添加 server 和 terminal 组的翻译
 - `packages/happy-app/sources/text/translations/zh-Hant.ts` — 添加 `common.remove` 和 server/terminal 组的翻译
 
-状态：**已提交 `22e57b25`，已 push 到远程**
+状态：**已提交 `22e57b25`，已 push**
 
 ### 2. 修复全平台"连接终端"UI 入口 ✅
 发现 Web 和 Tauri 桌面端完全没有"连接终端"入口，原因是 `EmptyMainScreen.tsx` 和 `SettingsView.tsx` 中的连接按钮被 `Platform.OS !== 'web'` 守卫包裹，导致 web 平台看不到任何连接 UI。
@@ -19,58 +19,42 @@
 - `packages/happy-app/sources/components/SettingsView.tsx` — 移除外层 `Platform.OS !== 'web'` 守卫，所有平台显示 "Enter URL manually"，仅 native 平台显示 "Scan QR code"
 - `packages/happy-app/sources/components/EmptyMainScreen.tsx` — 同样处理：步骤说明和 URL 粘贴按钮全平台显示，"Open Camera" 仅 native 显示
 
-状态：**未提交，等待下一个 session 提交**
+状态：**已提交 `f7759de5`，已 push**
 
-### 3. 云服务器准备 (部分完成)
-- 两台服务器已 SSH 连通，确认有 Node.js 和 yarn
-- 已克隆仓库并切换到 `feature/multi-server` 分支
-- **尚未执行 `yarn install && yarn build`**
+### 3. 云服务器部署 ✅
+- 两台服务器已部署 happy CLI 并可运行
+- Server A: `root@43.134.124.4`，repo 在 `/root/happy-tmux`
+- Server B: `ubuntu@150.109.16.237`，repo 在 `/home/ubuntu/happy-tmux`
 
 ### 4. 验证
 - `yarn typecheck`: ✅ 通过
 - `vitest run` (happy-app): ✅ 431 tests passed
 - `vitest run` (happy-cli): ✅ 280 tests passed
+- GitHub 已同步：所有代码已 push
 
 ---
 
 ## 接下来需要完成的工作（按顺序）
 
-### Step 1: 提交未提交的 UI 修复并 push
-本地有两个未提交的文件修改 + 一个未追踪的文档文件：
-```
-modified:   packages/happy-app/sources/components/EmptyMainScreen.tsx
-modified:   packages/happy-app/sources/components/SettingsView.tsx
-untracked:  docs/connect-terminal-ui-prompt.md
-```
-
-### Step 2: 在两台云服务器上安装构建 happy CLI
-通过 remote-server-connector skill 连接服务器：
-- Server A: `root@43.134.124.4`，密码 `2001426xhY!`，repo 在 `/root/happy-tmux`
-- Server B: `ubuntu@150.109.16.237`，密码 `2001426xhY!`，repo 在 `/home/ubuntu/happy-tmux`
-
-每台服务器上执行：`git pull && cd packages/happy-cli && yarn install && yarn build`
-
-验证：`node bin/happy.mjs` 能运行并显示 QR 码和认证 URL
-
-### Step 3: 启动本地 APP 冒烟测试
+### Step 1: 启动本地 APP 冒烟测试
 `cd packages/happy-app && yarn web` → http://localhost:8081
 确认：
 - 空状态页显示步骤说明 + "Enter URL manually" 按钮
 - 切到 Settings tab 看到 "Enter URL manually" 选项
 
-### Step 4: 单服务器回归测试
-- 在 Server A 上运行 `node bin/happy.mjs`
+### Step 2: 单服务器回归测试
+- 在 Server A 上运行 `cd /root/happy-tmux/packages/happy-cli && node bin/happy.mjs`
 - 复制 `happy://terminal?key=...&server=...` URL
 - 在 APP 中 "Enter URL manually" 粘贴连接
 - 确认终端连接成功
 
-### Step 5: 多服务器测试
-- 在 Server B 上也运行 `node bin/happy.mjs`
+### Step 3: 多服务器测试
+- 在 Server B 上也运行 `cd /home/ubuntu/happy-tmux/packages/happy-cli && node bin/happy.mjs`
 - 在 APP 中连接第二个终端
 - 确认两个终端都能正常工作
 - 确认 Settings 里能看到两个服务器
 
-### Step 6: 修复发现的问题（如果有）
+### Step 4: 修复发现的问题（如果有）
 修复后重新验证：
 ```bash
 cd packages/happy-app && yarn typecheck
@@ -78,7 +62,7 @@ cd packages/happy-app && ./node_modules/.bin/vitest run
 cd packages/happy-cli && ./node_modules/.bin/vitest run
 ```
 
-### Step 7: 创建 PR
+### Step 5: 创建 PR
 从 `feature/multi-server` → `main` 创建 Pull Request
 
 ---
