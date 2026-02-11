@@ -43,6 +43,7 @@ export const ca: TranslationStructure = {
         create: 'Crear',
         rename: 'Reanomena',
         reset: 'Reinicia',
+        remove: 'Elimina',
         logout: 'Tanca la sessió',
         yes: 'Sí',
         no: 'No',
@@ -309,6 +310,12 @@ export const ca: TranslationStructure = {
 
     server: {
         // Used by Server Configuration screen (app/(app)/server.tsx)
+        servers: 'Servidors',
+        connectedServers: 'Servidors connectats',
+        noServersRegistered: 'No hi ha servidors registrats',
+        addServer: 'Afegeix servidor',
+        removeServer: 'Elimina servidor',
+        removeServerConfirm: 'Estàs segur que vols desconnectar-te d\'aquest servidor? Les sessions i màquines d\'aquest servidor s\'eliminaran.',
         serverConfiguration: 'Configuració del servidor',
         enterServerUrl: 'Introdueix una URL del servidor',
         notValidHappyServer: 'No és un servidor Happy vàlid',
@@ -651,6 +658,8 @@ export const ca: TranslationStructure = {
         publicKey: 'Clau pública',
         encryption: 'Xifratge',
         endToEndEncrypted: 'Xifrat punt a punt',
+        targetServer: 'Servidor de destinació',
+        newServerNotice: 'Aquest terminal és en un servidor nou. En acceptar, s\'afegirà aquest servidor als teus servidors connectats.',
         acceptConnection: 'Accepta la connexió',
         connecting: 'Connectant...',
         reject: 'Rebutja',

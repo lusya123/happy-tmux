@@ -54,6 +54,7 @@ export const pl: TranslationStructure = {
         create: 'Utwórz',
         rename: 'Zmień nazwę',
         reset: 'Resetuj',
+        remove: 'Usuń',
         logout: 'Wyloguj',
         yes: 'Tak',
         no: 'Nie',

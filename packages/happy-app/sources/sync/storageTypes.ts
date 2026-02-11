@@ -62,6 +62,7 @@ export interface Session {
     thinking: boolean,
     thinkingAt: number,
     presence: "online" | number, // "online" when active, timestamp when last seen
+    serverUrl?: string, // Server URL this session belongs to
     todos?: Array<{
         content: string;
         status: 'pending' | 'in_progress' | 'completed';
@@ -126,6 +127,7 @@ export interface Machine {
     metadataVersion: number;
     daemonState: any | null;  // Dynamic daemon state (runtime info)
     daemonStateVersion: number;
+    serverUrl?: string; // Server URL this machine belongs to
 }
 
 //

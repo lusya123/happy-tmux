@@ -8,7 +8,6 @@
 import { AIBackendProfile, validateProfileForAgent, getProfileEnvironmentVariables } from './settings';
 import { sync } from './sync';
 import { storage } from './storage';
-import { apiSocket } from './apiSocket';
 import { Modal } from '@/modal';
 
 // Profile sync status types

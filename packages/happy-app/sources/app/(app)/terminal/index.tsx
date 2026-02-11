@@ -4,30 +4,40 @@ import { Text } from '@/components/StyledText';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '@/constants/Typography';
 import { RoundButton } from '@/components/RoundButton';
-import { useConnectTerminal } from '@/hooks/useConnectTerminal';
+import { useConnectTerminal, parseTerminalUrl } from '@/hooks/useConnectTerminal';
 import { Ionicons } from '@expo/vector-icons';
 import { ItemList } from '@/components/ItemList';
 import { ItemGroup } from '@/components/ItemGroup';
 import { Item } from '@/components/Item';
 import { useUnistyles } from 'react-native-unistyles';
 import { t } from '@/text';
+import { getServerUrl } from '@/sync/serverConfig';
+import { getServerHostname } from '@/sync/serverRegistry';
 
 export default function TerminalScreen() {
     const router = useRouter();
     const searchParams = useLocalSearchParams();
     const { theme } = useUnistyles();
 
-    // const [urlProcessed, setUrlProcessed] = useState(false);
-    const publicKey = React.useMemo(() => {
+    // Parse URL params - support both new format (key + server) and old format
+    const parsed = React.useMemo(() => {
         const keys = Object.keys(searchParams);
-        if (keys.length > 0) {
-            // If we have any search params, the first one should be our key
-            const key = keys[0];
-            return key;
-        } else {
-            return null;
+        if (keys.length === 0) return null;
+
+        // Check for new format: key=...&server=...
+        const keyParam = searchParams['key'] as string | undefined;
+        const serverParam = searchParams['server'] as string | undefined;
+        if (keyParam) {
+            return {
+                publicKey: keyParam,
+                serverUrl: serverParam ? decodeURIComponent(serverParam) : null
+            };
         }
-    }, [searchParams])
+
+        // Old format: first key is the public key
+        return { publicKey: keys[0], serverUrl: null };
+    }, [searchParams]);
+
     const { processAuthUrl, isLoading } = useConnectTerminal({
         onSuccess: () => {
             router.back();
@@ -35,19 +45,27 @@ export default function TerminalScreen() {
     });
 
     const handleConnect = async () => {
-        if (publicKey) {
-            // Use the full happy:// URL format expected by the hook
-            const authUrl = `happy://terminal?${publicKey}`;
-            await processAuthUrl(authUrl);
+        if (!parsed) return;
+        // Reconstruct the URL for processAuthUrl
+        let authUrl: string;
+        if (parsed.serverUrl) {
+            authUrl = `happy://terminal?key=${parsed.publicKey}&server=${encodeURIComponent(parsed.serverUrl)}`;
+        } else {
+            authUrl = `happy://terminal?${parsed.publicKey}`;
         }
+        await processAuthUrl(authUrl);
     };
 
     const handleReject = () => {
         router.back();
     };
 
+    const activeServerUrl = getServerUrl();
+    const isNewServer = parsed?.serverUrl ? parsed.serverUrl !== activeServerUrl : false;
+    const targetHostname = parsed?.serverUrl ? getServerHostname(parsed.serverUrl) : null;
+
     // Show error if no key found
-    if (!publicKey) {
+    if (!parsed) {
         return (
             <>
                 <ItemList>
@@ -130,10 +148,18 @@ export default function TerminalScreen() {
                 <ItemGroup title={t('terminal.connectionDetails')}>
                     <Item
                         title={t('terminal.publicKey')}
-                        detail={`${publicKey.substring(0, 12)}...`}
+                        detail={`${parsed.publicKey.substring(0, 12)}...`}
                         icon={<Ionicons name="key-outline" size={29} color={theme.colors.radio.active} />}
                         showChevron={false}
                     />
+                    {targetHostname && (
+                        <Item
+                            title={t('terminal.targetServer')}
+                            detail={targetHostname}
+                            icon={<Ionicons name="server-outline" size={29} color={isNewServer ? theme.colors.status.connecting : theme.colors.radio.active} />}
+                            showChevron={false}
+                        />
+                    )}
                     <Item
                         title={t('terminal.encryption')}
                         detail={t('terminal.endToEndEncrypted')}
@@ -141,6 +167,26 @@ export default function TerminalScreen() {
                         showChevron={false}
                     />
                 </ItemGroup>
+
+                {/* New Server Notice */}
+                {isNewServer && (
+                    <ItemGroup>
+                        <View style={{
+                            paddingHorizontal: 16,
+                            paddingVertical: 12
+                        }}>
+                            <Text style={{
+                                ...Typography.default(),
+                                fontSize: 13,
+                                color: theme.colors.status.connecting,
+                                textAlign: 'center',
+                                lineHeight: 18
+                            }}>
+                                {t('terminal.newServerNotice')}
+                            </Text>
+                        </View>
+                    </ItemGroup>
+                )}
 
                 {/* Action Buttons */}
                 <ItemGroup>

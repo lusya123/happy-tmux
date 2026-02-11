@@ -17,7 +17,9 @@ import { View, Platform } from 'react-native';
 import { ModalProvider } from '@/modal';
 import { PostHogProvider } from 'posthog-react-native';
 import { tracking } from '@/track/tracking';
-import { syncRestore } from '@/sync/sync';
+import { sync, syncRestore } from '@/sync/sync';
+import { getRegisteredServers, registerServer, setActiveServerUrl } from '@/sync/serverRegistry';
+import { getServerUrl } from '@/sync/serverConfig';
 import { useTrackScreens } from '@/track/useTrackScreens';
 import { RealtimeProvider } from '@/realtime/RealtimeProvider';
 import { FaviconPermissionIndicator } from '@/components/web/FaviconPermissionIndicator';
@@ -185,6 +187,24 @@ export default function RootLayout() {
                 console.log('credentials', credentials);
                 if (credentials) {
                     await syncRestore(credentials);
+
+                    // Register the primary server if not already registered
+                    const primaryUrl = getServerUrl();
+                    const servers = getRegisteredServers();
+                    if (servers.length === 0) {
+                        registerServer(primaryUrl);
+                        setActiveServerUrl(primaryUrl);
+                    }
+
+                    // Connect to additional registered servers
+                    for (const server of servers) {
+                        if (server.url !== primaryUrl) {
+                            const serverCreds = await TokenStorage.getCredentials(server.url);
+                            if (serverCreds) {
+                                await sync.addServer(server.url, serverCreds);
+                            }
+                        }
+                    }
                 }
 
                 setInitState({ credentials });

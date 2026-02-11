@@ -10,6 +10,8 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { t } from '@/text';
 import { ItemList } from '@/components/ItemList';
 import { SearchableListSelector } from '@/components/SearchableListSelector';
+import { hasMultipleServers } from '@/sync/serverConfig';
+import { getServerHostname } from '@/sync/serverRegistry';
 
 const stylesheet = StyleSheet.create((theme) => ({
     container: {
@@ -118,7 +120,9 @@ export default function MachinePickerScreen() {
                     config={{
                         getItemId: (machine) => machine.id,
                         getItemTitle: (machine) => machine.metadata?.displayName || machine.metadata?.host || machine.id,
-                        getItemSubtitle: undefined,
+                        getItemSubtitle: hasMultipleServers() ? (machine) => {
+                            return machine.serverUrl ? getServerHostname(machine.serverUrl) : undefined;
+                        } : undefined,
                         getItemIcon: (machine) => (
                             <Ionicons
                                 name="desktop-outline"

@@ -8,5 +8,5 @@ import { configuration } from '@/configuration';
  */
 export function generateWebAuthUrl(publicKey: Uint8Array): string {
     const publicKeyBase64 = encodeBase64(publicKey, 'base64url');
-    return `${configuration.webappUrl}/terminal/connect#key=${publicKeyBase64}`;
+    return `${configuration.webappUrl}/terminal/connect#key=${publicKeyBase64}&server=${encodeURIComponent(configuration.serverUrl)}`;
 }

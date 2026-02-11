@@ -8,10 +8,10 @@ interface AuthRequestStatus {
     supportsV2: boolean;
 }
 
-export async function authApprove(token: string, publicKey: Uint8Array, answerV1: Uint8Array, answerV2: Uint8Array) {
-    const API_ENDPOINT = getServerUrl();
+export async function authApprove(token: string, publicKey: Uint8Array, answerV1: Uint8Array, answerV2: Uint8Array, serverUrl?: string) {
+    const API_ENDPOINT = serverUrl || getServerUrl();
     const publicKeyBase64 = encodeBase64(publicKey);
-    
+
     // First, check the auth request status
     const statusResponse = await axios.get<AuthRequestStatus>(
         `${API_ENDPOINT}/v1/auth/request/status`,
@@ -21,22 +21,20 @@ export async function authApprove(token: string, publicKey: Uint8Array, answerV1
             }
         }
     );
-    
+
     const { status, supportsV2 } = statusResponse.data;
-    
+
     // Handle different status cases
     if (status === 'not_found') {
-        // Already authorized, no need to approve again
         console.log('Auth request already authorized or not found');
         return;
     }
-    
+
     if (status === 'authorized') {
-        // Already authorized, no need to approve again
         console.log('Auth request already authorized');
         return;
     }
-    
+
     // Handle pending status
     if (status === 'pending') {
         await axios.post(`${API_ENDPOINT}/v1/auth/response`, {

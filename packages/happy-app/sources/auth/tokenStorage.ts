@@ -11,15 +11,28 @@ export interface AuthCredentials {
     secret: string;
 }
 
+function serverKey(serverUrl: string): string {
+    // Simple hash: use a short deterministic key from the URL
+    let hash = 0;
+    for (let i = 0; i < serverUrl.length; i++) {
+        const char = serverUrl.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    return `auth_credentials_${Math.abs(hash).toString(36)}`;
+}
+
 export const TokenStorage = {
-    async getCredentials(): Promise<AuthCredentials | null> {
+    async getCredentials(serverUrl?: string): Promise<AuthCredentials | null> {
+        const key = serverUrl ? serverKey(serverUrl) : AUTH_KEY;
         if (Platform.OS === 'web') {
-            return localStorage.getItem(AUTH_KEY) ? JSON.parse(localStorage.getItem(AUTH_KEY)!) as AuthCredentials : null;
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) as AuthCredentials : null;
         }
         try {
-            const stored = await SecureStore.getItemAsync(AUTH_KEY);
+            const stored = await SecureStore.getItemAsync(key);
             if (!stored) return null;
-            credentialsCache = stored; // Update cache
+            if (!serverUrl) credentialsCache = stored;
             return JSON.parse(stored) as AuthCredentials;
         } catch (error) {
             console.error('Error getting credentials:', error);
@@ -27,15 +40,16 @@ export const TokenStorage = {
         }
     },
 
-    async setCredentials(credentials: AuthCredentials): Promise<boolean> {
+    async setCredentials(credentials: AuthCredentials, serverUrl?: string): Promise<boolean> {
+        const key = serverUrl ? serverKey(serverUrl) : AUTH_KEY;
         if (Platform.OS === 'web') {
-            localStorage.setItem(AUTH_KEY, JSON.stringify(credentials));
+            localStorage.setItem(key, JSON.stringify(credentials));
             return true;
         }
         try {
             const json = JSON.stringify(credentials);
-            await SecureStore.setItemAsync(AUTH_KEY, json);
-            credentialsCache = json; // Update cache
+            await SecureStore.setItemAsync(key, json);
+            if (!serverUrl) credentialsCache = json;
             return true;
         } catch (error) {
             console.error('Error setting credentials:', error);
@@ -43,14 +57,15 @@ export const TokenStorage = {
         }
     },
 
-    async removeCredentials(): Promise<boolean> {
-        if (Platform.OS === 'web') {    
-            localStorage.removeItem(AUTH_KEY);
+    async removeCredentials(serverUrl?: string): Promise<boolean> {
+        const key = serverUrl ? serverKey(serverUrl) : AUTH_KEY;
+        if (Platform.OS === 'web') {
+            localStorage.removeItem(key);
             return true;
         }
         try {
-            await SecureStore.deleteItemAsync(AUTH_KEY);
-            credentialsCache = null; // Clear cache
+            await SecureStore.deleteItemAsync(key);
+            if (!serverUrl) credentialsCache = null;
             return true;
         } catch (error) {
             console.error('Error removing credentials:', error);

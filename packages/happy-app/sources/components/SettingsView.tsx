@@ -13,7 +13,8 @@ import { ItemList } from '@/components/ItemList';
 import { useConnectTerminal } from '@/hooks/useConnectTerminal';
 import { useEntitlement, useLocalSettingMutable, useSetting } from '@/sync/storage';
 import { sync } from '@/sync/sync';
-import { isUsingCustomServer } from '@/sync/serverConfig';
+import { isUsingCustomServer, hasMultipleServers } from '@/sync/serverConfig';
+import { getServerHostname } from '@/sync/serverRegistry';
 import { trackPaywallButtonClicked, trackWhatsNewClicked } from '@/track';
 import { Modal } from '@/modal';
 import { useMultiClick } from '@/hooks/useMultiClick';
@@ -274,6 +275,11 @@ export const SettingsView = React.memo(function SettingsView() {
                         }
                         if (platform) {
                             subtitle = subtitle ? `${subtitle} • ${platform}` : platform;
+                        }
+                        // Show server hostname when multiple servers are connected
+                        if (hasMultipleServers() && machine.serverUrl) {
+                            const serverHost = getServerHostname(machine.serverUrl);
+                            subtitle = subtitle ? `${subtitle} • ${serverHost}` : serverHost;
                         }
                         subtitle = subtitle ? `${subtitle} • ${isOnline ? t('status.online') : t('status.offline')}` : (isOnline ? t('status.online') : t('status.offline'));
 

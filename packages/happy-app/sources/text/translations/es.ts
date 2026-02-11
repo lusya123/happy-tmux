@@ -43,6 +43,7 @@ export const es: TranslationStructure = {
         create: 'Crear',
         rename: 'Renombrar',
         reset: 'Restablecer',
+        remove: 'Eliminar',
         logout: 'Cerrar sesión',
         yes: 'Sí',
         no: 'No',
@@ -309,6 +310,12 @@ export const es: TranslationStructure = {
 
     server: {
         // Used by Server Configuration screen (app/(app)/server.tsx)
+        servers: 'Servidores',
+        connectedServers: 'Servidores conectados',
+        noServersRegistered: 'No hay servidores registrados',
+        addServer: 'Agregar servidor',
+        removeServer: 'Eliminar servidor',
+        removeServerConfirm: '¿Estás seguro de que quieres desconectarte de este servidor? Las sesiones y máquinas de este servidor serán eliminadas.',
         serverConfiguration: 'Configuración del servidor',
         enterServerUrl: 'Ingresa una URL de servidor',
         notValidHappyServer: 'No es un servidor Happy válido',
@@ -651,6 +658,8 @@ export const es: TranslationStructure = {
         publicKey: 'Clave pública',
         encryption: 'Cifrado',
         endToEndEncrypted: 'Cifrado de extremo a extremo',
+        targetServer: 'Servidor de destino',
+        newServerNotice: 'Este terminal está en un servidor nuevo. Al aceptar, se añadirá este servidor a tus servidores conectados.',
         acceptConnection: 'Aceptar conexión',
         connecting: 'Conectando...',
         reject: 'Rechazar',

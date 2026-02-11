@@ -23,6 +23,8 @@ import { parseToken } from '@/utils/parseToken';
 import { RevenueCat, LogLevel, PaywallResult } from './revenueCat';
 import { trackPaywallPresented, trackPaywallPurchased, trackPaywallCancelled, trackPaywallRestored, trackPaywallError } from '@/track';
 import { getServerUrl } from './serverConfig';
+import { ServerConnection, ConnectionStatus } from './serverConnection';
+import { registerServer } from './serverRegistry';
 import { config } from '@/config';
 import { log } from '@/log';
 import { gitStatusSync } from './gitStatusSync';
@@ -73,6 +75,13 @@ class Sync {
     // Generic locking mechanism
     private recalculationLockCount = 0;
     private lastRecalculationTime = 0;
+
+    // Multi-server connections
+    private connections = new Map<string, ServerConnection>();
+
+    // Map sessionId/machineId -> serverUrl for routing
+    private sessionServerMap = new Map<string, string>();
+    private machineServerMap = new Map<string, string>();
 
     constructor() {
         this.sessionsSync = new InvalidateSync(this.fetchSessions);
@@ -542,8 +551,8 @@ class Sync {
             decryptedSessions.push(processedSession);
         }
 
-        // Apply to storage
-        this.applySessions(decryptedSessions);
+        // Apply to storage with primary server URL
+        this.applySessions(decryptedSessions, getServerUrl());
         log.log(`📥 fetchSessions completed - processed ${decryptedSessions.length} sessions`);
 
     }
@@ -558,6 +567,93 @@ class Sync {
 
     public getCredentials() {
         return this.credentials;
+    }
+
+    // Multi-server management
+
+    public async addServer(serverUrl: string, credentials: AuthCredentials): Promise<void> {
+        if (this.connections.has(serverUrl)) return;
+
+        const secretKey = decodeBase64(credentials.secret, 'base64url');
+        const encryption = await Encryption.create(secretKey);
+        const conn = new ServerConnection(serverUrl, credentials, encryption);
+
+        // Wire status changes to storage
+        conn.onStatusChange((status) => {
+            storage.getState().setServerSocketStatus(serverUrl, status);
+        });
+
+        // Wire reconnect to re-fetch data
+        conn.onReconnected(() => {
+            this.sessionsSync.invalidate();
+            this.machinesSync.invalidate();
+        });
+
+        // Wire update messages
+        conn.onMessage('update', (data: any) => this.handleUpdate(data, serverUrl));
+        conn.onMessage('ephemeral', (data: any) => this.handleEphemeralUpdate(data));
+
+        conn.connect();
+        this.connections.set(serverUrl, conn);
+        registerServer(serverUrl);
+    }
+
+    public removeServer(serverUrl: string): void {
+        const conn = this.connections.get(serverUrl);
+        if (conn) {
+            conn.disconnect();
+            this.connections.delete(serverUrl);
+        }
+        storage.getState().removeServerData(serverUrl);
+        // Clean up routing maps
+        for (const [id, url] of this.sessionServerMap) {
+            if (url === serverUrl) this.sessionServerMap.delete(id);
+        }
+        for (const [id, url] of this.machineServerMap) {
+            if (url === serverUrl) this.machineServerMap.delete(id);
+        }
+    }
+
+    public hasConnection(serverUrl: string): boolean {
+        return this.connections.has(serverUrl);
+    }
+
+    public getConnectionForSession(sessionId: string): ServerConnection | null {
+        const serverUrl = this.sessionServerMap.get(sessionId);
+        if (serverUrl) return this.connections.get(serverUrl) || null;
+        return null;
+    }
+
+    public getConnectionForMachine(machineId: string): ServerConnection | null {
+        const serverUrl = this.machineServerMap.get(machineId);
+        if (serverUrl) return this.connections.get(serverUrl) || null;
+        return null;
+    }
+
+    public getSocketForMachine(machineId: string): ServerConnection {
+        const conn = this.getConnectionForMachine(machineId);
+        if (conn) return conn;
+        // Fallback: return primary connection (apiSocket wrapper)
+        throw new Error(`No connection found for machine ${machineId}`);
+    }
+
+    public getSocketForSession(sessionId: string): ServerConnection {
+        const conn = this.getConnectionForSession(sessionId);
+        if (conn) return conn;
+        throw new Error(`No connection found for session ${sessionId}`);
+    }
+
+    public getAllConnections(): Map<string, ServerConnection> {
+        return this.connections;
+    }
+
+    // Register session/machine -> server mapping
+    public registerSessionServer(sessionId: string, serverUrl: string): void {
+        this.sessionServerMap.set(sessionId, serverUrl);
+    }
+
+    public registerMachineServer(machineId: string, serverUrl: string): void {
+        this.machineServerMap.set(machineId, serverUrl);
     }
 
     // Artifact methods
@@ -944,8 +1040,13 @@ class Sync {
             }
         }
 
-        // Replace entire machine state with fetched machines
-        storage.getState().applyMachines(decryptedMachines, true);
+        // Replace machines from primary server
+        const primaryServerUrl = getServerUrl();
+        storage.getState().applyMachines(decryptedMachines, true, primaryServerUrl);
+        // Update machine -> server routing map
+        for (const machine of decryptedMachines) {
+            this.machineServerMap.set(machine.id, primaryServerUrl);
+        }
         log.log(`🖥️ fetchMachines completed - processed ${decryptedMachines.length} machines`);
     }
 
@@ -1488,7 +1589,7 @@ class Sync {
 
     private subscribeToUpdates = () => {
         // Subscribe to message updates
-        apiSocket.onMessage('update', this.handleUpdate.bind(this));
+        apiSocket.onMessage('update', (data: unknown) => this.handleUpdate(data, getServerUrl()));
         apiSocket.onMessage('ephemeral', this.handleEphemeralUpdate.bind(this));
 
         // Subscribe to connection state changes
@@ -1514,7 +1615,7 @@ class Sync {
         });
     }
 
-    private handleUpdate = async (update: unknown) => {
+    private handleUpdate = async (update: unknown, serverUrl?: string) => {
         console.log('🔄 Sync: handleUpdate called with:', JSON.stringify(update).substring(0, 300));
         const validatedUpdate = ApiUpdateContainerSchema.safeParse(update);
         if (!validatedUpdate.success) {
@@ -1574,7 +1675,7 @@ class Sync {
                             // Update thinking state based on task lifecycle events
                             ...(isTaskComplete ? { thinking: false } : {}),
                             ...(isTaskStarted ? { thinking: true } : {})
-                        }])
+                        }], serverUrl)
                     } else {
                         // Fetch sessions again if we don't have this session
                         this.fetchSessions();
@@ -1647,7 +1748,7 @@ class Sync {
                         : session.metadataVersion,
                     updatedAt: updateData.createdAt,
                     seq: updateData.seq
-                }]);
+                }], serverUrl);
 
                 // Invalidate git status when agent state changes (files may have been modified)
                 if (updateData.body.agentState) {
@@ -2031,9 +2132,15 @@ class Sync {
 
     private applySessions = (sessions: (Omit<Session, "presence"> & {
         presence?: "online" | number;
-    })[]) => {
+    })[], serverUrl?: string) => {
         const active = storage.getState().getActiveSessions();
-        storage.getState().applySessions(sessions);
+        storage.getState().applySessions(sessions, serverUrl);
+        // Update session -> server routing map
+        if (serverUrl) {
+            for (const session of sessions) {
+                this.sessionServerMap.set(session.id, serverUrl);
+            }
+        }
         const newActive = storage.getState().getActiveSessions();
         this.applySessionDiff(active, newActive);
     }

@@ -58,6 +58,7 @@ export const en: TranslationStructure = {
         create: 'Create',
         rename: 'Rename',
         reset: 'Reset',
+        remove: 'Remove',
         logout: 'Logout',
         yes: 'Yes',
         no: 'No',
@@ -324,7 +325,13 @@ export const en: TranslationStructure = {
 
     server: {
         // Used by Server Configuration screen (app/(app)/server.tsx)
+        servers: 'Servers',
         serverConfiguration: 'Server Configuration',
+        connectedServers: 'Connected Servers',
+        noServersRegistered: 'No servers registered',
+        addServer: 'Add Server',
+        removeServer: 'Remove Server',
+        removeServerConfirm: 'Are you sure you want to disconnect from this server? Sessions and machines from this server will be removed.',
         enterServerUrl: 'Please enter a server URL',
         notValidHappyServer: 'Not a valid Happy Server',
         changeServer: 'Change Server',
@@ -666,6 +673,8 @@ export const en: TranslationStructure = {
         publicKey: 'Public Key',
         encryption: 'Encryption',
         endToEndEncrypted: 'End-to-end encrypted',
+        targetServer: 'Target Server',
+        newServerNotice: 'This terminal is on a new server. Accepting will add this server to your connected servers.',
         acceptConnection: 'Accept Connection',
         connecting: 'Connecting...',
         reject: 'Reject',
