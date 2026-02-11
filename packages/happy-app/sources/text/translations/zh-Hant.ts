@@ -61,6 +61,7 @@ export const zhHant: TranslationStructure = {
         loading: '載入中...',
         retry: '重試',
         delete: '刪除',
+        remove: '移除',
         optional: '選填',
     },
 
@@ -323,7 +324,13 @@ export const zhHant: TranslationStructure = {
         failedToConnectToServer: '連線伺服器失敗',
         currentlyUsingCustomServer: '目前使用自訂伺服器',
         customServerUrlLabel: '自訂伺服器 URL',
-        advancedFeatureFooter: "這是一個進階功能。只有在您知道自己在做什麼時才更改伺服器。更改伺服器後您需要重新登入。"
+        advancedFeatureFooter: "這是一個進階功能。只有在您知道自己在做什麼時才更改伺服器。更改伺服器後您需要重新登入。",
+        servers: '伺服器',
+        connectedServers: '已連線伺服器',
+        noServersRegistered: '沒有已註冊的伺服器',
+        addServer: '新增伺服器',
+        removeServer: '移除伺服器',
+        removeServerConfirm: '您確定要移除此伺服器嗎？此伺服器的所有工作階段和資料將被移除。',
     },
 
     sessionInfo: {
@@ -661,6 +668,8 @@ export const zhHant: TranslationStructure = {
         clientSideProcessing: '用戶端處理',
         linkProcessedLocally: '連結在瀏覽器中本機處理',
         linkProcessedOnDevice: '連結在裝置上本機處理',
+        targetServer: '目標伺服器',
+        newServerNotice: '此終端在新的伺服器上。接受將把此伺服器加入您的已連線伺服器。',
     },
 
     modals: {
