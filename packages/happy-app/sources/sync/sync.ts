@@ -557,6 +557,74 @@ class Sync {
 
     }
 
+    /**
+     * Fetch sessions from a specific additional server connection.
+     * Used when a new server is added to immediately populate its sessions.
+     */
+    private fetchSessionsFromServer = async (conn: ServerConnection) => {
+        const serverUrl = conn.serverUrl;
+        const response = await conn.request('/v1/sessions');
+        if (!response.ok) {
+            console.error(`Failed to fetch sessions from ${serverUrl}: ${response.status}`);
+            return;
+        }
+
+        const data = await response.json();
+        const sessions = data.sessions as Array<{
+            id: string;
+            tag: string;
+            seq: number;
+            metadata: string;
+            metadataVersion: number;
+            agentState: string | null;
+            agentStateVersion: number;
+            dataEncryptionKey: string | null;
+            active: boolean;
+            activeAt: number;
+            createdAt: number;
+            updatedAt: number;
+            lastMessage: ApiMessage | null;
+        }>;
+
+        // Initialize session encryptions
+        const sessionKeys = new Map<string, Uint8Array | null>();
+        for (const session of sessions) {
+            if (session.dataEncryptionKey) {
+                const decrypted = await conn.encryption.decryptEncryptionKey(session.dataEncryptionKey);
+                if (!decrypted) {
+                    console.error(`Failed to decrypt data encryption key for session ${session.id} from ${serverUrl}`);
+                    continue;
+                }
+                sessionKeys.set(session.id, decrypted);
+            } else {
+                sessionKeys.set(session.id, null);
+            }
+        }
+        await conn.encryption.initializeSessions(sessionKeys);
+
+        // Decrypt sessions
+        const decryptedSessions: (Omit<Session, 'presence'> & { presence?: "online" | number })[] = [];
+        for (const session of sessions) {
+            const sessionEncryption = conn.encryption.getSessionEncryption(session.id);
+            if (!sessionEncryption) {
+                console.error(`Session encryption not found for ${session.id} from ${serverUrl}`);
+                continue;
+            }
+            const metadata = await sessionEncryption.decryptMetadata(session.metadataVersion, session.metadata);
+            const agentState = await sessionEncryption.decryptAgentState(session.agentStateVersion, session.agentState);
+            decryptedSessions.push({
+                ...session,
+                thinking: false,
+                thinkingAt: 0,
+                metadata,
+                agentState
+            });
+        }
+
+        this.applySessions(decryptedSessions, serverUrl);
+        log.log(`📥 fetchSessionsFromServer(${serverUrl}) completed - ${decryptedSessions.length} sessions`);
+    }
+
     public refreshMachines = async () => {
         return this.fetchMachines();
     }
@@ -583,10 +651,10 @@ class Sync {
             storage.getState().setServerSocketStatus(serverUrl, status);
         });
 
-        // Wire reconnect to re-fetch data
+        // Wire reconnect to re-fetch data from this specific server
         conn.onReconnected(() => {
-            this.sessionsSync.invalidate();
-            this.machinesSync.invalidate();
+            this.fetchMachinesFromServer(conn).catch(e => console.error(`Reconnect: failed to fetch machines from ${serverUrl}:`, e));
+            this.fetchSessionsFromServer(conn).catch(e => console.error(`Reconnect: failed to fetch sessions from ${serverUrl}:`, e));
         });
 
         // Wire update messages
@@ -596,6 +664,10 @@ class Sync {
         conn.connect();
         this.connections.set(serverUrl, conn);
         registerServer(serverUrl);
+
+        // Immediately fetch machines and sessions from the new server
+        this.fetchMachinesFromServer(conn).catch(e => console.error(`Failed to fetch machines from ${serverUrl}:`, e));
+        this.fetchSessionsFromServer(conn).catch(e => console.error(`Failed to fetch sessions from ${serverUrl}:`, e));
     }
 
     public removeServer(serverUrl: string): void {
@@ -1048,6 +1120,101 @@ class Sync {
             this.machineServerMap.set(machine.id, primaryServerUrl);
         }
         log.log(`🖥️ fetchMachines completed - processed ${decryptedMachines.length} machines`);
+    }
+
+    /**
+     * Fetch machines from a specific additional server connection.
+     * Used when a new server is added to immediately populate its machines.
+     */
+    private fetchMachinesFromServer = async (conn: ServerConnection) => {
+        const serverUrl = conn.serverUrl;
+        const response = await conn.request('/v1/machines');
+        if (!response.ok) {
+            console.error(`Failed to fetch machines from ${serverUrl}: ${response.status}`);
+            return;
+        }
+
+        const data = await response.json();
+        const machines = data as Array<{
+            id: string;
+            metadata: string;
+            metadataVersion: number;
+            daemonState?: string | null;
+            daemonStateVersion?: number;
+            dataEncryptionKey?: string | null;
+            seq: number;
+            active: boolean;
+            activeAt: number;
+            createdAt: number;
+            updatedAt: number;
+        }>;
+
+        // Decrypt encryption keys
+        const machineKeysMap = new Map<string, Uint8Array | null>();
+        for (const machine of machines) {
+            if (machine.dataEncryptionKey) {
+                const decryptedKey = await conn.encryption.decryptEncryptionKey(machine.dataEncryptionKey);
+                if (!decryptedKey) {
+                    console.error(`Failed to decrypt data encryption key for machine ${machine.id} from ${serverUrl}`);
+                    continue;
+                }
+                machineKeysMap.set(machine.id, decryptedKey);
+                conn.machineDataKeys.set(machine.id, decryptedKey);
+            } else {
+                machineKeysMap.set(machine.id, null);
+            }
+        }
+
+        await conn.encryption.initializeMachines(machineKeysMap);
+
+        const decryptedMachines: Machine[] = [];
+        for (const machine of machines) {
+            const machineEncryption = conn.encryption.getMachineEncryption(machine.id);
+            if (!machineEncryption) {
+                console.error(`Machine encryption not found for ${machine.id} from ${serverUrl}`);
+                continue;
+            }
+            try {
+                const metadata = machine.metadata
+                    ? await machineEncryption.decryptMetadata(machine.metadataVersion, machine.metadata)
+                    : null;
+                const daemonState = machine.daemonState
+                    ? await machineEncryption.decryptDaemonState(machine.daemonStateVersion || 0, machine.daemonState)
+                    : null;
+                decryptedMachines.push({
+                    id: machine.id,
+                    seq: machine.seq,
+                    createdAt: machine.createdAt,
+                    updatedAt: machine.updatedAt,
+                    active: machine.active,
+                    activeAt: machine.activeAt,
+                    metadata,
+                    metadataVersion: machine.metadataVersion,
+                    daemonState,
+                    daemonStateVersion: machine.daemonStateVersion || 0
+                });
+            } catch (error) {
+                console.error(`Failed to decrypt machine ${machine.id} from ${serverUrl}:`, error);
+                decryptedMachines.push({
+                    id: machine.id,
+                    seq: machine.seq,
+                    createdAt: machine.createdAt,
+                    updatedAt: machine.updatedAt,
+                    active: machine.active,
+                    activeAt: machine.activeAt,
+                    metadata: null,
+                    metadataVersion: machine.metadataVersion,
+                    daemonState: null,
+                    daemonStateVersion: 0
+                });
+            }
+        }
+
+        storage.getState().applyMachines(decryptedMachines, true, serverUrl);
+        for (const machine of decryptedMachines) {
+            this.machineServerMap.set(machine.id, serverUrl);
+        }
+        log.log(`🖥️ fetchMachinesFromServer(${serverUrl}) completed - ${decryptedMachines.length} machines`);
     }
 
     private fetchFriends = async () => {
