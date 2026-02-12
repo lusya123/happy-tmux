@@ -10,6 +10,10 @@ This folder documents how Happy works internally, with a focus on protocol, back
 - deployment.md: How to deploy the backend and required infrastructure.
 - cli-architecture.md: CLI and daemon architecture and how they interact with the server.
 
+## Active Development
+
+- **[dev/](dev/)** — Working notes and session handoffs for the multi-server feature. See `dev/README.md` for reading order.
+
 ## Conventions
 - Paths and field names reflect the current implementation in `packages/happy-server`.
 - Examples are illustrative; the canonical source is the code.
