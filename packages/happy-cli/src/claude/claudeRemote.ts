@@ -113,11 +113,27 @@ export async function claudeRemote(opts: {
 
     // Prepare SDK options
     let mode = initial.mode;
+    const mappedPermissionMode = mapToClaudeMode(initial.mode.permissionMode);
+    const runningAsRoot = typeof process.getuid === 'function' && process.getuid() === 0;
+    const effectivePermissionMode =
+        runningAsRoot && mappedPermissionMode === 'bypassPermissions'
+            ? 'default'
+            : mappedPermissionMode;
+
+    if (runningAsRoot && mappedPermissionMode === 'bypassPermissions') {
+        logger.warn(
+            '[claudeRemote] Running as root; Claude Code does not allow bypassPermissions. Falling back to default permission mode.'
+        );
+        opts.onCompletionEvent?.(
+            'Running as root: bypassPermissions is not supported by Claude Code, switched to default permissions.'
+        );
+    }
+
     const sdkOptions: QueryOptions = {
         cwd: opts.path,
         resume: startFrom ?? undefined,
         mcpServers: opts.mcpServers,
-        permissionMode: mapToClaudeMode(initial.mode.permissionMode),
+        permissionMode: effectivePermissionMode,
         model: initial.mode.model,
         fallbackModel: initial.mode.fallbackModel,
         customSystemPrompt: initial.mode.customSystemPrompt ? initial.mode.customSystemPrompt + '\n\n' + systemPrompt : undefined,
