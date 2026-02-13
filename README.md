@@ -1,96 +1,123 @@
 <div align="center"><img src="/.github/logotype-dark.png" width="400" title="Happy Coder" alt="Happy Coder"/></div>
 
 <h1 align="center">
-  Mobile and Web Client for Claude Code & Codex
+  Happy Tmux — AI Agent 编排控制台
 </h1>
 
 <h4 align="center">
-Use Claude Code or Codex from anywhere with end-to-end encryption.
+在 tmux 中统一管理多个 AI 编码代理，端到端加密，随时随地掌控。
 </h4>
 
 <div align="center">
-  
-[📱 **iOS App**](https://apps.apple.com/us/app/happy-claude-code-client/id6748571505) • [🤖 **Android App**](https://play.google.com/store/apps/details?id=com.ex3ndr.happy) • [🌐 **Web App**](https://app.happy.engineering) • [🎥 **See a Demo**](https://youtu.be/GCS0OG9QMSE) • [📚 **Documentation**](https://happy.engineering/docs/) • [💬 **Discord**](https://discord.gg/fX9WBAhyfD)
+
+[📱 **iOS**](https://apps.apple.com/us/app/happy-claude-code-client/id6748571505) • [🤖 **Android**](https://play.google.com/store/apps/details?id=com.ex3ndr.happy) • [🌐 **Web**](https://app.happy.engineering) • [📚 **文档**](https://happy.engineering/docs/) • [💬 **Discord**](https://discord.gg/fX9WBAhyfD)
 
 </div>
 
 <img width="5178" height="2364" alt="github" src="/.github/header.png" />
 
+---
 
-<h3 align="center">
-Step 1: Download App
-</h3>
+## 修改前 vs 修改后
 
-<div align="center">
-<a href="https://apps.apple.com/us/app/happy-claude-code-client/id6748571505"><img width="135" height="39" alt="appstore" src="https://github.com/user-attachments/assets/45e31a11-cf6b-40a2-a083-6dc8d1f01291" /></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://play.google.com/store/apps/details?id=com.ex3ndr.happy"><img width="135" height="39" alt="googleplay" src="https://github.com/user-attachments/assets/acbba639-858f-4c74-85c7-92a4096efbf5" /></a>
-</div>
+| 维度 | 修改前 | 修改后 |
+|------|--------|--------|
+| 定位 | Claude Code / Codex 的移动端遥控器 | AI Agent 编排控制台 |
+| 会话模型 | 单 agent、手动切换 | 多 agent 并行，tmux 窗口自动编排 |
+| tmux 角色 | 可选附加功能 | 核心运行时，所有远程会话默认运行于 tmux |
+| 交互方式 | 手机 ↔ 桌面二选一 | 手机监控 + 桌面深度操作，同时在线 |
 
-<h3 align="center">
-Step 2: Install CLI on your computer
-</h3>
+---
+
+## 已实现
+
+- 通过 `happy` CLI 启动 Claude Code / Codex 会话
+- 远程会话自动在 tmux 窗口中生成
+- 手机端实时查看 agent 输出、授权操作
+- 推送通知：权限请求、错误、任务完成
+- 端到端加密，代码不离开你的设备
+- 一键切换手机 / 桌面控制权
+- 守护进程模式 (`happy daemon start`)
+
+---
+
+## 规划中
+
+- 多 agent 并行面板：在同一 tmux session 中同时运行多个 agent
+- Agent 生命周期管理：自动重启、超时回收、资源限制
+- 会话录制与回放：完整记录 agent 交互历史
+- 自定义编排脚本：通过配置文件定义 agent 启动流程
+- Web 仪表盘：可视化查看所有 agent 状态与资源占用
+- Webhook 集成：agent 事件推送至 Slack / 飞书等平台
+
+---
+
+## 快速开始
+
+### 1. 安装 CLI
 
 ```bash
 npm install -g happy-coder
 ```
 
-<h3 align="center">
-Step 3: Start using `happy` instead of `claude` or `codex`
-</h3>
+### 2. 启动守护进程
 
 ```bash
-
-# Instead of: claude
-# Use: happy
-
-happy
-
-# Instead of: codex
-# Use: happy codex
-
-happy codex
-
+happy daemon start
 ```
 
-<div align="center"><img src="/.github/mascot.png" width="200" title="Happy Coder" alt="Happy Coder"/></div>
+### 3. 运行 agent
 
-## How does it work?
+```bash
+# 启动 Claude Code
+happy
 
-On your computer, run `happy` instead of `claude` or `happy codex` instead of `codex` to start your AI through our wrapper. When you want to control your coding agent from your phone, it restarts the session in remote mode. To switch back to your computer, just press any key on your keyboard.
+# 启动 Codex
+happy codex
+```
 
-## Tmux (Optional)
+### 4. 手机连接
 
-For remote sessions spawned by the Happy daemon, you can run sessions inside `tmux` windows:
+在 iOS / Android 应用的 Profile 设置中开启 **Spawn Sessions in Tmux**，即可在手机上监控和操作 agent。
 
-1. Start daemon: `happy daemon start`
-2. In app profile settings, enable **Spawn Sessions in Tmux**
-3. Optionally set profile env vars such as `TMUX_SESSION_NAME` and `TMUX_TMPDIR`
+---
 
-Detailed CLI docs: `packages/happy-cli/README.md`
+## 典型工作流
 
-## 🔥 Why Happy Coder?
+```text
+┌─ 开发者桌面 ──────────────────────────────────┐
+│                                                │
+│  $ happy daemon start                          │
+│  $ happy            ← 启动 Claude Code agent   │
+│  $ happy codex      ← 启动 Codex agent         │
+│                                                │
+│  tmux 自动为每个 agent 分配独立窗口              │
+│  桌面随时 attach 查看任意 agent                  │
+└────────────────────────────────────────────────┘
+         │  端到端加密同步
+         ▼
+┌─ 手机端 ──────────────────────────────────────┐
+│                                                │
+│  实时查看 agent 输出                            │
+│  收到推送 → 授权文件写入 / 命令执行              │
+│  按任意键 → 控制权回到桌面                       │
+└────────────────────────────────────────────────┘
+```
 
-- 📱 **Mobile access to Claude Code and Codex** - Check what your AI is building while away from your desk
-- 🔔 **Push notifications** - Get alerted when Claude Code and Codex needs permission or encounters errors  
-- ⚡ **Switch devices instantly** - Take control from phone or desktop with one keypress
-- 🔐 **End-to-end encrypted** - Your code never leaves your devices unencrypted
-- 🛠️ **Open source** - Audit the code yourself. No telemetry, no tracking
+---
 
-## 📦 Project Components
+## 项目组件
 
-- **[Happy App](https://github.com/slopus/happy/tree/main/packages/happy-app)** - Web UI + mobile client (Expo)
-- **[Happy CLI](https://github.com/slopus/happy/tree/main/packages/happy-cli)** - Command-line interface for Claude Code and Codex
-- **[Happy Server](https://github.com/slopus/happy/tree/main/packages/happy-server)** - Backend server for encrypted sync
+- **[Happy App](https://github.com/slopus/happy/tree/main/packages/happy-app)** — Web UI + 移动客户端 (Expo)
+- **[Happy CLI](https://github.com/slopus/happy/tree/main/packages/happy-cli)** — 命令行界面
+- **[Happy Server](https://github.com/slopus/happy/tree/main/packages/happy-server)** — 加密同步后端
 
-## 🏠 Who We Are
+## 文档与贡献
 
-We're engineers scattered across Bay Area coffee shops and hacker houses, constantly checking how our AI coding agents are progressing on our pet projects during lunch breaks. Happy Coder was born from the frustration of not being able to peek at our AI coding tools building our side hustles while we're away from our keyboards. We believe the best tools come from scratching your own itch and sharing with the community.
-
-## 📚 Documentation & Contributing
-
-- **[Documentation Website](https://happy.engineering/docs/)** - Learn how to use Happy Coder effectively
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development setup including iOS, Android, and macOS desktop variant builds
-- **[Edit docs at github.com/slopus/slopus.github.io](https://github.com/slopus/slopus.github.io)** - Help improve our documentation and guides
+- [在线文档](https://happy.engineering/docs/)
+- [CONTRIBUTING.md](CONTRIBUTING.md) — 开发环境搭建
+- [帮助改进文档](https://github.com/slopus/slopus.github.io)
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — 详见 [LICENSE](LICENSE)。
