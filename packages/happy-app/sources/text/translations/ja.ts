@@ -45,6 +45,7 @@ export const ja: TranslationStructure = {
         create: '作成',
         rename: '名前を変更',
         reset: 'リセット',
+        remove: '削除',
         logout: 'ログアウト',
         yes: 'はい',
         no: 'いいえ',
@@ -341,6 +342,12 @@ export const ja: TranslationStructure = {
 
     server: {
         // Used by Server Configuration screen (app/(app)/server.tsx)
+        servers: 'サーバー',
+        connectedServers: '接続済みサーバー',
+        noServersRegistered: '登録されたサーバーはありません',
+        addServer: 'サーバーを追加',
+        removeServer: 'サーバーを削除',
+        removeServerConfirm: 'このサーバーから切断してもよろしいですか？このサーバーのセッションとマシンが削除されます。',
         serverConfiguration: 'サーバー設定',
         enterServerUrl: 'サーバーURLを入力してください',
         notValidHappyServer: '有効なHappy Serverではありません',
@@ -683,6 +690,8 @@ export const ja: TranslationStructure = {
         publicKey: '公開鍵',
         encryption: '暗号化',
         endToEndEncrypted: 'エンドツーエンド暗号化',
+        targetServer: 'ターゲットサーバー',
+        newServerNotice: 'このターミナルは新しいサーバーにあります。承認すると、このサーバーが接続済みサーバーに追加されます。',
         acceptConnection: '接続を承認',
         connecting: '接続中...',
         reject: '拒否',

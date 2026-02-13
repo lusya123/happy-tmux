@@ -19,7 +19,7 @@ import { StatusDot } from './StatusDot';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from '@/constants/Typography';
 import { t } from '@/text';
-import { isUsingCustomServer } from '@/sync/serverConfig';
+import { isUsingCustomServer, hasMultipleServers } from '@/sync/serverConfig';
 import { trackFriendsSearch } from '@/track';
 
 interface MainViewProps {
@@ -205,7 +205,7 @@ const HeaderRight = React.memo(({ activeTab }: { activeTab: ActiveTabType }) => 
     }
 
     if (activeTab === 'settings') {
-        if (!isCustomServer) {
+        if (!isCustomServer && !hasMultipleServers()) {
             // Empty view to maintain header centering
             return <View style={styles.headerButton} />;
         }

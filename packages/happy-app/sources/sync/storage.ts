@@ -89,14 +89,17 @@ interface StorageState {
     realtimeStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
     realtimeMode: 'idle' | 'speaking';
     socketStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+    socketStatuses: Record<string, 'disconnected' | 'connecting' | 'connected' | 'error'>; // Per-server status
     socketLastConnectedAt: number | null;
     socketLastDisconnectedAt: number | null;
     isDataReady: boolean;
     nativeUpdateStatus: { available: boolean; updateUrl?: string } | null;
     todoState: TodoState | null;
     todosLoaded: boolean;
-    applySessions: (sessions: (Omit<Session, 'presence'> & { presence?: "online" | number })[]) => void;
-    applyMachines: (machines: Machine[], replace?: boolean) => void;
+    applySessions: (sessions: (Omit<Session, 'presence'> & { presence?: "online" | number })[], serverUrl?: string) => void;
+    applyMachines: (machines: Machine[], replace?: boolean, serverUrl?: string) => void;
+    removeServerData: (serverUrl: string) => void;
+    setServerSocketStatus: (serverUrl: string, status: 'disconnected' | 'connecting' | 'connected' | 'error') => void;
     applyLoaded: () => void;
     applyReady: () => void;
     applyMessages: (sessionId: string, messages: NormalizedMessage[]) => { changed: string[], hasReadyEvent: boolean };
@@ -276,6 +279,7 @@ export const storage = create<StorageState>()((set, get) => {
         realtimeStatus: 'disconnected',
         realtimeMode: 'idle',
         socketStatus: 'disconnected',
+        socketStatuses: {},
         socketLastConnectedAt: null,
         socketLastDisconnectedAt: null,
         isDataReady: false,
@@ -299,7 +303,7 @@ export const storage = create<StorageState>()((set, get) => {
             const state = get();
             return Object.values(state.sessions).filter(s => s.active);
         },
-        applySessions: (sessions: (Omit<Session, 'presence'> & { presence?: "online" | number })[]) => set((state) => {
+        applySessions: (sessions: (Omit<Session, 'presence'> & { presence?: "online" | number })[], serverUrl?: string) => set((state) => {
             // Load drafts and permission modes if sessions are empty (initial load)
             const savedDrafts = Object.keys(state.sessions).length === 0 ? sessionDrafts : {};
             const savedPermissionModes = Object.keys(state.sessions).length === 0 ? sessionPermissionModes : {};
@@ -320,6 +324,7 @@ export const storage = create<StorageState>()((set, get) => {
                 mergedSessions[session.id] = {
                     ...session,
                     presence,
+                    ...(serverUrl && { serverUrl }),
                     draft: existingDraft || savedDraft || session.draft || null,
                     permissionMode: existingPermissionMode || savedPermissionMode || session.permissionMode || 'default'
                 };
@@ -737,6 +742,46 @@ export const storage = create<StorageState>()((set, get) => {
                 ...updates
             };
         }),
+        setServerSocketStatus: (serverUrl: string, status: 'disconnected' | 'connecting' | 'connected' | 'error') => set((state) => {
+            const newStatuses = { ...state.socketStatuses, [serverUrl]: status };
+            // Compute aggregate status: connected if any connected, connecting if any connecting, else disconnected
+            let aggregate: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
+            const values = Object.values(newStatuses);
+            if (values.some(s => s === 'connected')) aggregate = 'connected';
+            else if (values.some(s => s === 'connecting')) aggregate = 'connecting';
+            else if (values.some(s => s === 'error')) aggregate = 'error';
+            return {
+                ...state,
+                socketStatuses: newStatuses,
+                socketStatus: aggregate
+            };
+        }),
+        removeServerData: (serverUrl: string) => set((state) => {
+            // Remove sessions from this server
+            const remainingSessions: Record<string, Session> = {};
+            for (const [id, session] of Object.entries(state.sessions)) {
+                if (session.serverUrl !== serverUrl) {
+                    remainingSessions[id] = session;
+                }
+            }
+            // Remove machines from this server
+            const remainingMachines: Record<string, Machine> = {};
+            for (const [id, machine] of Object.entries(state.machines)) {
+                if (machine.serverUrl !== serverUrl) {
+                    remainingMachines[id] = machine;
+                }
+            }
+            // Remove server socket status
+            const { [serverUrl]: _, ...remainingStatuses } = state.socketStatuses;
+            const sessionListViewData = buildSessionListViewData(remainingSessions);
+            return {
+                ...state,
+                sessions: remainingSessions,
+                machines: remainingMachines,
+                socketStatuses: remainingStatuses,
+                sessionListViewData
+            };
+        }),
         updateSessionDraft: (sessionId: string, draft: string | null) => set((state) => {
             const session = state.sessions[sessionId];
             if (!session) return state;
@@ -840,11 +885,24 @@ export const storage = create<StorageState>()((set, get) => {
             // Trigger a state update to notify hooks
             set((state) => ({ ...state }));
         },
-        applyMachines: (machines: Machine[], replace: boolean = false) => set((state) => {
+        applyMachines: (machines: Machine[], replace: boolean = false, serverUrl?: string) => set((state) => {
             // Either replace all machines or merge updates
             let mergedMachines: Record<string, Machine>;
 
-            if (replace) {
+            if (replace && serverUrl) {
+                // Replace machines from this specific server only
+                mergedMachines = { ...state.machines };
+                // Remove existing machines from this server
+                for (const [id, machine] of Object.entries(mergedMachines)) {
+                    if (machine.serverUrl === serverUrl) {
+                        delete mergedMachines[id];
+                    }
+                }
+                // Add new machines tagged with serverUrl
+                machines.forEach(machine => {
+                    mergedMachines[machine.id] = { ...machine, serverUrl };
+                });
+            } else if (replace) {
                 // Replace entire machine state (used by fetchMachines)
                 mergedMachines = {};
                 machines.forEach(machine => {
@@ -854,7 +912,10 @@ export const storage = create<StorageState>()((set, get) => {
                 // Merge individual updates (used by update-machine)
                 mergedMachines = { ...state.machines };
                 machines.forEach(machine => {
-                    mergedMachines[machine.id] = machine;
+                    mergedMachines[machine.id] = {
+                        ...machine,
+                        ...(serverUrl && { serverUrl }),
+                    };
                 });
             }
 

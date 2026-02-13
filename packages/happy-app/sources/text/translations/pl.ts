@@ -54,6 +54,7 @@ export const pl: TranslationStructure = {
         create: 'Utwórz',
         rename: 'Zmień nazwę',
         reset: 'Resetuj',
+        remove: 'Usuń',
         logout: 'Wyloguj',
         yes: 'Tak',
         no: 'Nie',
@@ -333,7 +334,13 @@ export const pl: TranslationStructure = {
         failedToConnectToServer: 'Nie udało się połączyć z serwerem',
         currentlyUsingCustomServer: 'Aktualnie używany jest niestandardowy serwer',
         customServerUrlLabel: 'URL niestandardowego serwera',
-        advancedFeatureFooter: 'To jest zaawansowana funkcja. Zmieniaj serwer tylko jeśli wiesz, co robisz. Po zmianie serwera będziesz musiał się wylogować i zalogować ponownie.'
+        advancedFeatureFooter: 'To jest zaawansowana funkcja. Zmieniaj serwer tylko jeśli wiesz, co robisz. Po zmianie serwera będziesz musiał się wylogować i zalogować ponownie.',
+        servers: 'Serwery',
+        connectedServers: 'Połączone serwery',
+        noServersRegistered: 'Brak zarejestrowanych serwerów',
+        addServer: 'Dodaj serwer',
+        removeServer: 'Usuń serwer',
+        removeServerConfirm: 'Czy na pewno chcesz usunąć ten serwer? Wszystkie sesje i dane z tego serwera zostaną usunięte.',
     },
 
     sessionInfo: {
@@ -670,6 +677,8 @@ export const pl: TranslationStructure = {
         clientSideProcessing: 'Przetwarzanie po stronie klienta',
         linkProcessedLocally: 'Link przetworzony lokalnie w przeglądarce',
         linkProcessedOnDevice: 'Link przetworzony lokalnie na urządzeniu',
+        targetServer: 'Serwer docelowy',
+        newServerNotice: 'Ten terminal znajduje się na nowym serwerze. Zaakceptowanie doda ten serwer do połączonych serwerów.',
     },
 
     modals: {

@@ -59,6 +59,7 @@ export const en = {
         loading: 'Loading...',
         retry: 'Retry',
         delete: 'Delete',
+        remove: 'Remove',
         optional: 'optional',
     },
 
@@ -321,7 +322,13 @@ export const en = {
         failedToConnectToServer: 'Failed to connect to server',
         currentlyUsingCustomServer: 'Currently using custom server',
         customServerUrlLabel: 'Custom Server URL',
-        advancedFeatureFooter: "This is an advanced feature. Only change the server if you know what you're doing. You will need to log out and log in again after changing servers."
+        advancedFeatureFooter: "This is an advanced feature. Only change the server if you know what you're doing. You will need to log out and log in again after changing servers.",
+        servers: 'Servers',
+        connectedServers: 'Connected Servers',
+        noServersRegistered: 'No servers registered',
+        addServer: 'Add Server',
+        removeServer: 'Remove Server',
+        removeServerConfirm: 'Are you sure you want to remove this server? All sessions and data from this server will be removed.',
     },
 
     sessionInfo: {
@@ -659,6 +666,8 @@ export const en = {
         clientSideProcessing: 'Client-Side Processing',
         linkProcessedLocally: 'Link processed locally in browser',
         linkProcessedOnDevice: 'Link processed locally on device',
+        targetServer: 'Target Server',
+        newServerNotice: 'This terminal is on a new server. Accepting will add this server to your connected servers.',
     },
 
     modals: {

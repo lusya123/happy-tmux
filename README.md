@@ -1,11 +1,11 @@
 <div align="center"><img src="/.github/logotype-dark.png" width="400" title="Happy Coder" alt="Happy Coder"/></div>
 
 <h1 align="center">
-  Mobile and Web Client for Claude Code & Codex
+  Multi-Server Control Platform for Claude Code & Codex
 </h1>
 
 <h4 align="center">
-Use Claude Code or Codex from anywhere with end-to-end encryption.
+Manage multiple AI coding agents across all your machines from anywhere, with end-to-end encryption.
 </h4>
 
 <div align="center">
@@ -34,28 +34,37 @@ npm install -g happy-coder
 ```
 
 <h3 align="center">
-Step 3: Start using `happy` instead of `claude` or `codex`
+Step 3: Connect all your machines
 </h3>
 
 ```bash
-
-# Instead of: claude
-# Use: happy
-
+# On your local machine
 happy
 
-# Instead of: codex
-# Use: happy codex
+# On your cloud server
+happy
 
-happy codex
+# On your remote workstation
+happy
 
+# All sessions appear in one unified interface
+# Scan QR codes to add each machine
 ```
 
 <div align="center"><img src="/.github/mascot.png" width="200" title="Happy Coder" alt="Happy Coder"/></div>
 
 ## How does it work?
 
-On your computer, run `happy` instead of `claude` or `happy codex` instead of `codex` to start your AI through our wrapper. When you want to control your coding agent from your phone, it restarts the session in remote mode. To switch back to your computer, just press any key on your keyboard.
+Happy Coder acts as a unified control center for all your AI coding agents across multiple machines. Run `happy` on any computer (local dev machine, cloud server, remote workstation), and all sessions appear in one unified interface on your mobile device or web browser.
+
+**Multi-Server Architecture:**
+- Connect to unlimited servers simultaneously (local + cloud + remote)
+- All sessions and machines unified in a single view
+- Seamlessly switch between environments
+- Add new servers by scanning QR codes
+- Independent connection management per server
+
+When you want to control a session from your phone, it switches to remote mode. Press any key on your keyboard to switch back to local control.
 
 ## Tmux (Optional)
 
@@ -63,27 +72,55 @@ For remote sessions spawned by the Happy daemon, you can run sessions inside `tm
 
 1. Start daemon: `happy daemon start`
 2. In app profile settings, enable **Spawn Sessions in Tmux**
-3. Optionally set profile env vars such as `TMUX_SESSION_NAME` and `TMUX_TMPDIR`
+3. Sessions will automatically use the `happy` tmux session (created if it doesn't exist)
+4. Optionally customize with profile env vars: `TMUX_SESSION_NAME`, `TMUX_TMPDIR`
 
 Detailed CLI docs: `packages/happy-cli/README.md`
 
 ## 🔥 Why Happy Coder?
 
-- 📱 **Mobile access to Claude Code and Codex** - Check what your AI is building while away from your desk
-- 🔔 **Push notifications** - Get alerted when Claude Code and Codex needs permission or encounters errors  
-- ⚡ **Switch devices instantly** - Take control from phone or desktop with one keypress
+- 🌐 **Multi-server unified control** - Manage AI agents across all your machines (local, cloud, remote) in one interface
+- 📱 **Access from anywhere** - Control your coding agents from mobile, web, or desktop
+- ⚡ **Seamless environment switching** - Jump between dev, staging, and production servers instantly
+- 🔔 **Smart notifications** - Get alerted when any agent needs permission or encounters errors
 - 🔐 **End-to-end encrypted** - Your code never leaves your devices unencrypted
 - 🛠️ **Open source** - Audit the code yourself. No telemetry, no tracking
 
-## 📦 Project Components
+## 📦 Architecture
 
-- **[Happy App](https://github.com/slopus/happy/tree/main/packages/happy-app)** - Web UI + mobile client (Expo)
-- **[Happy CLI](https://github.com/slopus/happy/tree/main/packages/happy-cli)** - Command-line interface for Claude Code and Codex
-- **[Happy Server](https://github.com/slopus/happy/tree/main/packages/happy-server)** - Backend server for encrypted sync
+Happy Coder is a distributed control platform with three components:
+
+- **[Happy App](https://github.com/slopus/happy/tree/main/packages/happy-app)** - Unified control interface (iOS, Android, Web, macOS)
+- **[Happy CLI](https://github.com/slopus/happy/tree/main/packages/happy-cli)** - Agent wrapper installed on each machine
+- **[Happy Server](https://github.com/slopus/happy/tree/main/packages/happy-server)** - Encrypted sync and coordination layer
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Happy App                            │
+│            (Unified Control Interface)                  │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          │ (encrypted WebSocket)
+                          │
+┌─────────────────────────────────────────────────────────┐
+│                   Happy Server                          │
+│              (Sync & Coordination)                      │
+└─────────────────────────────────────────────────────────┘
+          │                │                │
+          │                │                │
+    ┌─────────┐      ┌─────────┐      ┌─────────┐
+    │Local Dev│      │  Cloud  │      │ Remote  │
+    │ Machine │      │ Server  │      │Workstatn│
+    │         │      │         │      │         │
+    │happy CLI│      │happy CLI│      │happy CLI│
+    │    ↓    │      │    ↓    │      │    ↓    │
+    │ Claude  │      │ Claude  │      │ Claude  │
+    └─────────┘      └─────────┘      └─────────┘
+```
 
 ## 🏠 Who We Are
 
-We're engineers scattered across Bay Area coffee shops and hacker houses, constantly checking how our AI coding agents are progressing on our pet projects during lunch breaks. Happy Coder was born from the frustration of not being able to peek at our AI coding tools building our side hustles while we're away from our keyboards. We believe the best tools come from scratching your own itch and sharing with the community.
+We're engineers managing AI coding agents across multiple environments - local dev machines, cloud servers, and remote workstations. Happy Coder was born from the frustration of juggling multiple terminal sessions and losing track of which AI agent was working on what, where. We needed a unified control center to manage all our coding agents from anywhere. We believe the best tools come from scratching your own itch and sharing with the community.
 
 ## 📚 Documentation & Contributing
 

@@ -45,6 +45,7 @@ export const zhHans: TranslationStructure = {
         create: '创建',
         rename: '重命名',
         reset: '重置',
+        remove: '移除',
         logout: '登出',
         yes: '是',
         no: '否',
@@ -311,6 +312,12 @@ export const zhHans: TranslationStructure = {
 
     server: {
         // Used by Server Configuration screen (app/(app)/server.tsx)
+        servers: '服务器',
+        connectedServers: '已连接的服务器',
+        noServersRegistered: '没有已注册的服务器',
+        addServer: '添加服务器',
+        removeServer: '移除服务器',
+        removeServerConfirm: '您确定要断开与此服务器的连接吗？此服务器上的会话和设备将被移除。',
         serverConfiguration: '服务器配置',
         enterServerUrl: '请输入服务器 URL',
         notValidHappyServer: '不是有效的 Happy 服务器',
@@ -653,6 +660,8 @@ export const zhHans: TranslationStructure = {
         publicKey: '公钥',
         encryption: '加密',
         endToEndEncrypted: '端到端加密',
+        targetServer: '目标服务器',
+        newServerNotice: '此终端位于新服务器上。接受后，此服务器将被添加到您的已连接服务器中。',
         acceptConnection: '接受连接',
         connecting: '连接中...',
         reject: '拒绝',

@@ -13,7 +13,8 @@ import { ItemList } from '@/components/ItemList';
 import { useConnectTerminal } from '@/hooks/useConnectTerminal';
 import { useEntitlement, useLocalSettingMutable, useSetting } from '@/sync/storage';
 import { sync } from '@/sync/sync';
-import { isUsingCustomServer } from '@/sync/serverConfig';
+import { isUsingCustomServer, hasMultipleServers } from '@/sync/serverConfig';
+import { getServerHostname } from '@/sync/serverRegistry';
 import { trackPaywallButtonClicked, trackWhatsNewClicked } from '@/track';
 import { Modal } from '@/modal';
 import { useMultiClick } from '@/hooks/useMultiClick';
@@ -166,9 +167,9 @@ export const SettingsView = React.memo(function SettingsView() {
                 </View>
             </View>
 
-            {/* Connect Terminal - Only show on native platforms */}
-            {Platform.OS !== 'web' && (
-                <ItemGroup>
+            {/* Connect Terminal */}
+            <ItemGroup>
+                {Platform.OS !== 'web' && (
                     <Item
                         title={t('settings.scanQrCodeToAuthenticate')}
                         icon={<Ionicons name="qr-code-outline" size={29} color="#007AFF" />}
@@ -176,26 +177,26 @@ export const SettingsView = React.memo(function SettingsView() {
                         loading={isLoading}
                         showChevron={false}
                     />
-                    <Item
-                        title={t('connect.enterUrlManually')}
-                        icon={<Ionicons name="link-outline" size={29} color="#007AFF" />}
-                        onPress={async () => {
-                            const url = await Modal.prompt(
-                                t('modals.authenticateTerminal'),
-                                t('modals.pasteUrlFromTerminal'),
-                                {
-                                    placeholder: 'happy://terminal?...',
-                                    confirmText: t('common.authenticate')
-                                }
-                            );
-                            if (url?.trim()) {
-                                connectWithUrl(url.trim());
+                )}
+                <Item
+                    title={t('connect.enterUrlManually')}
+                    icon={<Ionicons name="link-outline" size={29} color="#007AFF" />}
+                    onPress={async () => {
+                        const url = await Modal.prompt(
+                            t('modals.authenticateTerminal'),
+                            t('modals.pasteUrlFromTerminal'),
+                            {
+                                placeholder: 'happy://terminal?...',
+                                confirmText: t('common.authenticate')
                             }
-                        }}
-                        showChevron={false}
-                    />
-                </ItemGroup>
-            )}
+                        );
+                        if (url?.trim()) {
+                            connectWithUrl(url.trim());
+                        }
+                    }}
+                    showChevron={false}
+                />
+            </ItemGroup>
 
             {/* Support Us */}
             <ItemGroup>
@@ -274,6 +275,11 @@ export const SettingsView = React.memo(function SettingsView() {
                         }
                         if (platform) {
                             subtitle = subtitle ? `${subtitle} • ${platform}` : platform;
+                        }
+                        // Show server hostname when multiple servers are connected
+                        if (hasMultipleServers() && machine.serverUrl) {
+                            const serverHost = getServerHostname(machine.serverUrl);
+                            subtitle = subtitle ? `${subtitle} • ${serverHost}` : serverHost;
                         }
                         subtitle = subtitle ? `${subtitle} • ${isOnline ? t('status.online') : t('status.offline')}` : (isOnline ? t('status.online') : t('status.offline'));
 
